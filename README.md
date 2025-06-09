@@ -20,9 +20,8 @@ Dart öğrenirken sırayla şu bölümleri takip edebilirsin:
 8. [Class, Object, Constructor – OOP Başlangıç](dart/bolum_8/bolum8.md)
 9. [Inheritance, super, override, Polymorphism](dart/bolum_9/bolum9.md)
 10. [List, Map, Set, Collection if, Spread Operator ve Koleksiyon Detayları](dart/bolum_10/bolum10.md)
-11. [Koleksiyonlar (List, Map, Set, Spread, Collection if/for)](dart/bolum_11/bolum11.md)
-12. [Fonksiyonlar: Temelden İleriye Her Şey!](dart/bolum_12/bolum12.md)
-13. [Class'lar: A’dan Z’ye](dart/bolum_13/bolum13.md)
+11. [Fonksiyonlar: Temelden İleriye Her Şey!](dart/bolum_11/bolum11.md)
+12. [Class'lar: A’dan Z’ye](dart/bolum_12/bolum12.md)
 
 ---
 
