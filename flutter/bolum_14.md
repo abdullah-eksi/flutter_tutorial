@@ -1,5 +1,5 @@
 
-# ⚡ Flutter Animasyon Performansı — Sıfır Tıkanma Kanka Rehberi ⚡
+# ⚡ Flutter Animasyon Performansı — Sıfır Tıkanma  ⚡
 
 ---
 

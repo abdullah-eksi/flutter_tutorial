@@ -1,6 +1,6 @@
 
 
-# Flutter + Firebase Authentication Basit Login & Register Kanka Versiyonu
+# Flutter + Firebase Authentication Basit Login & Register 
 
 ---
 

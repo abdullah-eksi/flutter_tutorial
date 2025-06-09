@@ -1,6 +1,3 @@
-Valla kanka, devam edelim! Offline-online işini hallettik, şimdi **Flutter’da state management** olayıyla kafa patlatalım. Çünkü bu işi halletmezsen app’in durumu, verisi, UI’ı yönetmek çorba olur, anla yani.
-
----
 
 # 🚀 Flutter’da State Management: A’dan Z’ye
 
@@ -162,10 +159,3 @@ Mesela Todo App falan...
 * İşaretle (tamamlandı gibi)
 
 Bu gerçek dünya örneği ile tam oturur Provider mantığı.
-
----
-
-**Ne dersin? State management’i full kapsayıcı, kafanı rahatlatacak şekilde devam edeyim mi?**
-Sen demeden ben atarım bi Todo app starter code’u, full detaylı.
-Tabi sonra Flutter’ın diğer konuları da hazır, UI, animasyon, servisler, performans, native entegrasyon vs.
-

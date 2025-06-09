@@ -1,7 +1,6 @@
 
 
-# 🎬 Flutter Animasyonları: A’dan Z’ye Kanka Style
-
+# 🎬 Flutter Animasyonları: A’dan Z’ye 
 ---
 
 ## 1️⃣ Animasyon Türleri
