@@ -1,6 +1,6 @@
 
 
-# 📚 1.16 – Dart Class'lar: A’dan Z’ye, Bakkal Defteri Gibi Anlatım
+# 📚 1.16 – Dart Class'lar: A’dan Z’ye
 
 ---
 
