@@ -1,3 +1,505 @@
+# Flutter'da State Management
+
+## 1. State Management Nedir? (Flutter'da neden önemli?)
+
+**State (Durum)**, bir uygulamanın belirli bir andaki verilerini ve kullanıcı arayüzünün o anki görünümünü tanımlar. Örneğin, bir kullanıcının giriş yapmış olması, bir listeye öğe eklenmesi, bir butona tıklanması gibi her türlü etkileşim state'i değiştirebilir.
+
+**State Management** ise bu durumu yönetme, güncelleme ve uygulamanın farklı bölümlerine iletme sürecidir. Flutter, reaktif bir framework olduğu için state değiştiğinde, bu state'e bağlı olan widget'lar otomatik olarak yeniden oluşturulur (rebuild). Bu, kullanıcı arayüzünün state ile senkronize kalmasını sağlar.
+
+### Neden Önemli?
+
+- **Tutarlılık**: State yönetimi, uygulamanın farklı kısımlarında aynı verilerin tutarlı olmasını sağlar.
+- **Performans**: Etkili state yönetimi, gereksiz widget yeniden oluşturmalarını önleyerek performansı artırır.
+- **Test Edilebilirlik**: İyi yönetilen state, birim testlerini kolaylaştırır.
+- **Bakım**: Kodun düzenli ve anlaşılır olmasını sağlar, özellikle büyük projelerde.
+
+## State Türleri
+
+Flutter'da state iki ana kategoriye ayrılır:
+
+### Ephemeral State (Geçici Durum)
+- Sadece bir widget içinde kullanılan ve diğer widget'lar tarafından paylaşılmayan state.
+- Genellikle `setState` ile yönetilir.
+- Örnek: Bir TextField'ın içeriği, bir Checkbox'ın işaretli olup olmaması.
+
+### App State (Uygulama Durumu)
+- Birden fazla widget tarafından paylaşılan state.
+- Örnek: Kullanıcı oturumu, alışveriş sepeti, tema tercihi.
+
+Ayrıca, state yönetiminde aşağıdaki kategoriler de düşünülebilir:
+
+- **Local State**: Sadece bir widget veya birkaç widget arasında paylaşılan state.
+- **Global State**: Uygulamanın her yerinden erişilebilen state.
+
+## 2. MVC (Model-View-Controller) Yapısı ve State Management
+
+MVC, yazılım mühendisliğinde kullanılan bir tasarım desenidir. Flutter'da state management ile MVC arasında benzerlikler vardır.
+
+- **Model**: Uygulamanın veri yapısını ve iş kurallarını temsil eder. State'in kendisi modelde saklanır.
+- **View**: Kullanıcı arayüzüdür. Flutter'da widget'lar view olarak düşünülebilir.
+- **Controller**: Model ve view arasındaki etkileşimi yönetir. Kullanıcı girdilerini alır, modeli günceller ve view'ın güncellenmesini sağlar.
+
+Flutter'da state management çözümleri (Provider, Riverpod, Bloc) aslında controller rolünü üstlenir. Modeli yönetir ve view'ın (widget'lar) modeldeki değişikliklere tepki vermesini sağlar.
+
+## 3. Provider
+
+### Temel Kavramlar
+
+Provider, Flutter ekibi tarafından önerilen ve InheritedWidget'ı sarmalayarak kullanımı kolaylaştıran bir state yönetim paketidir. Provider, state'i (modeli) widget ağacının üst seviyelerinde sağlar (provide) ve alt seviyelerdeki widget'ların bu state'e erişmesine ve değişiklikleri dinlemesine olanak tanır.
+
+Provider'ın temel bileşenleri:
+
+- **ChangeNotifier**: State'in değiştiğini dinleyicilere bildiren sınıf. `notifyListeners` metodu çağrıldığında, dinleyen widget'lar yeniden oluşturulur.
+- **ChangeNotifierProvider**: ChangeNotifier sınıfını widget ağacına sağlayan widget.
+- **Consumer**: Provider'dan değer alan ve değişikliklerde yeniden oluşturulan widget.
+- **Provider.of** veya **context.watch**: Provider'a erişim ve dinleme için kullanılan yöntemler.
+
+### Örnek Senaryo: Sayaç Uygulaması
+
+#### Adım 1: Model (Counter sınıfı)
+
+```dart
+import 'package:flutter/material.dart';
+
+class Counter extends ChangeNotifier {
+  int _count = 0;
+
+  int get count => _count;
+
+  void increment() {
+    _count++;
+    notifyListeners(); // Dinleyicilere değişiklik bildirimi
+  }
+
+  void decrement() {
+    _count--;
+    notifyListeners();
+  }
+}
+```
+
+**Açıklama:**
+- `Counter` sınıfı `ChangeNotifier`'ı extend ediyor. Bu, `notifyListeners` metodunu kullanabilmesini sağlar.
+- `_count` private değişkeni, sayaç değerini tutar.
+- `increment` ve `decrement` metodları `_count` değerini değiştirir ve `notifyListeners` çağırır. Bu, bu sınıfı dinleyen widget'ların yeniden oluşturulmasını sağlar.
+
+#### Adım 2: Uygulamanın Kökünde Provider'ı Sağlama
+
+```dart
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => Counter(),
+      child: MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Provider Demo',
+      home: MyHomePage(),
+    );
+  }
+}
+```
+
+**Açıklama:**
+- `ChangeNotifierProvider`, `Counter` sınıfını widget ağacına sağlar.
+- `create` parametresi, `Counter` örneğini oluşturur.
+- `MyApp` widget'ı, `ChangeNotifierProvider`'ın altında olduğu için `Counter` sınıfına erişebilir.
+
+#### Adım 3: State'i Tüketme (Consuming)
+
+```dart
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Provider Example')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('You have pushed the button this many times:'),
+            Consumer<Counter>(
+              builder: (context, counter, child) {
+                return Text(
+                  '${counter.count}',
+                  style: Theme.of(context).textTheme.headline4,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Provider.of<Counter>(context, listen: false).increment();
+        },
+        tooltip: 'Increment',
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+```
+
+**Açıklama:**
+- `Consumer<Counter>` widget'ı, `Counter` sınıfındaki değişiklikleri dinler ve `builder` metodunu yeniden çalıştırır.
+- `builder` metodu, `counter` parametresi olarak `Counter` örneğini alır ve `counter.count` değerini gösterir.
+- `FloatingActionButton`'ın `onPressed` metodunda `Provider.of<Counter>(context, listen: false)` kullanılarak `Counter` sınıfına erişilir ve `increment` metodu çağrılır. `listen: false` because we only need to read the value and don't want to rebuild when the counter changes.
+
+Alternatif olarak, `context.watch` ve `context.read` kullanılabilir:
+
+```dart
+// Dinleme için
+final counter = context.watch<Counter>().count;
+
+// Sadece okuma için
+context.read<Counter>().increment();
+```
+
+### Provider'ın Avantajları ve Dezavantajları
+
+#### Avantajları:
+- Kolay öğrenilir ve kullanılır.
+- Resmi olarak Flutter ekibi tarafından önerilir.
+- Küçük ve orta ölçekli uygulamalar için idealdir.
+
+#### Dezavantajları:
+- Büyük uygulamalarda çok sayıda provider karmaşık hale gelebilir.
+- Hatalar çalışma zamanında ortaya çıkabilir (örneğin, provider bulunamazsa).
+
+## 4. Riverpod
+
+### Provider'dan Farkları
+
+Riverpod, Provider'ın yaratıcısı tarafından geliştirilmiş ve Provider'ın sınırlamalarını gidermeyi hedefleyen bir state yönetim kütüphanesidir. Temel farklar:
+
+- **Widget ağacından bağımsız**: Provider, InheritedWidget'a dayandığı için widget ağacına bağımlıdır. Riverpod ise sağlayıcıları (providers) widget ağacından bağımsız olarak tanımlar.
+- **Derleme zamanı güvenliği**: Riverpod, sağlayıcıların derleme zamanında kontrol edilmesini sağlar. Eksik sağlayıcılar derleme hatası verir.
+- **Daha fazla özellik**: Family, autoDispose, ScopedProvider gibi özelliklerle daha gelişmiş senaryoları destekler.
+
+### Örnek Senaryo: Sayaç Uygulaması
+
+#### Adım 1: Paket Ekleme
+
+`pubspec.yaml` dosyasına `flutter_riverpod` ekleyin.
+
+#### Adım 2: ProviderScope
+
+```dart
+void main() {
+  runApp(ProviderScope(child: MyApp()));
+}
+```
+
+`ProviderScope`, Riverpod'ın çalışması için gereklidir ve uygulamanın köküne eklenir.
+
+#### Adım 3: Sağlayıcı (Provider) Tanımlama
+
+```dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// StateNotifier kullanımı için model ve notifier sınıfları
+class CounterModel {
+  final int count;
+  CounterModel(this.count);
+}
+
+class CounterNotifier extends StateNotifier<CounterModel> {
+  CounterNotifier() : super(CounterModel(0));
+
+  void increment() {
+    state = CounterModel(state.count + 1);
+  }
+
+  void decrement() {
+    state = CounterModel(state.count - 1);
+  }
+}
+
+// StateNotifierProvider tanımlama
+final counterProvider = StateNotifierProvider<CounterNotifier, CounterModel>((ref) {
+  return CounterNotifier();
+});
+```
+
+**Açıklama:**
+- `CounterModel`, state'in yapısını tanımlar.
+- `CounterNotifier`, state'i yöneten sınıftır. `StateNotifier`'ı extend eder ve state'i günceller.
+- `counterProvider`, `StateNotifierProvider` tipinde bir sağlayıcıdır. `CounterNotifier` örneğini oluşturur.
+
+#### Adım 4: Tüketme (Consuming)
+
+```dart
+class MyApp extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return MaterialApp(
+      home: MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final counter = ref.watch(counterProvider);
+    return Scaffold(
+      appBar: AppBar(title: Text('Riverpod Example')),
+      body: Center(
+        child: Text(
+          '${counter.count}',
+          style: Theme.of(context).textTheme.headline4,
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ref.read(counterProvider.notifier).increment();
+        },
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+```
+
+**Açıklama:**
+- `ConsumerWidget`, build metoduna `WidgetRef ref` parametresini ekler. Bu `ref`, sağlayıcılara erişim sağlar.
+- `ref.watch(counterProvider)` ile `counterProvider` dinlenir ve değer alınır.
+- `ref.read(counterProvider.notifier)` ile `CounterNotifier` örneğine erişilir ve `increment` metodu çağrılır.
+
+### Riverpod'ın Avantajları ve Dezavantajları
+
+#### Avantajları:
+- Derleme zamanı güvenliği.
+- Widget ağacından bağımsız.
+- Test edilebilirlik.
+- Family, autoDispose gibi gelişmiş özellikler.
+
+#### Dezavantajları:
+- Öğrenme eğrisi Provider'a göre daha yüksek.
+- Nispeten yeni bir kütüphane.
+
+## 5. Bloc
+
+### Event-State Yapısı
+
+BLoC (Business Logic Component) deseni, iş mantığını UI'dan ayırmak için kullanılır. BLoC, event'leri (olay) state'lere (durum) dönüştürür. UI, event'leri BLoC'ye gönderir, BLoC state'leri yayınlar ve UI da bu state'lere göre güncellenir.
+
+Bloc paketinin iki varyasyonu vardır:
+
+- **Bloc**: Event-state yapısını kullanır. Her event için bir state dönüşümü vardır.
+- **Cubit**: Daha basittir, event kullanmaz. Metodlar çağrılarak state değiştirilir.
+
+### Örnek Senaryo: Sayaç Uygulaması (Bloc Kullanarak)
+
+#### Adım 1: Event ve State Tanımlama
+
+```dart
+// Events
+abstract class CounterEvent {}
+
+class Increment extends CounterEvent {}
+
+class Decrement extends CounterEvent {}
+
+// State
+class CounterState {
+  final int count;
+  CounterState(this.count);
+}
+```
+
+**Açıklama:**
+- `CounterEvent` abstract sınıfı, event'leri temsil eder. `Increment` ve `Decrement` event'leri.
+- `CounterState`, state'i temsil eder. `count` değişkeni mevcut sayıyı tutar.
+
+#### Adım 2: Bloc Sınıfı
+
+```dart
+import 'package:bloc/bloc.dart';
+
+class CounterBloc extends Bloc<CounterEvent, CounterState> {
+  CounterBloc() : super(CounterState(0)) {
+    on<Increment>((event, emit) {
+      emit(CounterState(state.count + 1));
+    });
+    on<Decrement>((event, emit) {
+      emit(CounterState(state.count - 1));
+    });
+  }
+}
+```
+
+**Açıklama:**
+- `CounterBloc`, `Bloc<CounterEvent, CounterState>` sınıfını extend eder.
+- Constructor'da başlangıç state'i `CounterState(0)` olarak verilir.
+- `on<Increment>` ve `on<Decrement>` event handler'ları tanımlanır. Her event geldiğinde, mevcut state'e göre yeni state oluşturulur ve `emit` ile yayınlanır.
+
+#### Adım 3: BlocProvider ve BlocBuilder
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: BlocProvider(
+        create: (context) => CounterBloc(),
+        child: CounterPage(),
+      ),
+    );
+  }
+}
+
+class CounterPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Bloc Example')),
+      body: Center(
+        child: BlocBuilder<CounterBloc, CounterState>(
+          builder: (context, state) {
+            return Text(
+              '${state.count}',
+              style: Theme.of(context).textTheme.headline4,
+            );
+          },
+        ),
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () {
+              context.read<CounterBloc>().add(Increment());
+            },
+            child: Icon(Icons.add),
+          ),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: () {
+              context.read<CounterBloc>().add(Decrement());
+            },
+            child: Icon(Icons.remove),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+**Açıklama:**
+- `BlocProvider`, `CounterBloc` örneğini widget ağacına sağlar.
+- `BlocBuilder<CounterBloc, CounterState>`, `CounterBloc`'u dinler ve state değiştiğinde `builder` metodunu çalıştırır.
+- `FloatingActionButton`'lar, `context.read<CounterBloc>().add(Increment())` ile event'i Bloc'e gönderir.
+
+### Cubit Kullanımı
+
+Cubit, Bloc'in daha basit halidir. Event yerine doğrudan metodlar kullanılır.
+
+#### Cubit Sınıfı:
+
+```dart
+class CounterCubit extends Cubit<int> {
+  CounterCubit() : super(0);
+
+  void increment() => emit(state + 1);
+  void decrement() => emit(state - 1);
+}
+```
+
+**Açıklama:**
+- `CounterCubit`, `Cubit<int>` sınıfını extend eder. State tipi `int` olarak belirlenmiştir.
+- `increment` ve `decrement` metodları `emit` ile state'i günceller.
+
+#### Kullanımı:
+
+```dart
+class CounterPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Cubit Example')),
+      body: Center(
+        child: BlocBuilder<CounterCubit, int>(
+          builder: (context, state) {
+            return Text(
+              '$state',
+              style: Theme.of(context).textTheme.headline4,
+            );
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.read<CounterCubit>().increment();
+        },
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+}
+```
+
+**Açıklama:**
+- `BlocBuilder<CounterCubit, int>` ile `CounterCubit` dinlenir ve state (int) kullanılır.
+- `context.read<CounterCubit>().increment()` ile Cubit'in metodu çağrılır.
+
+### Bloc'un Avantajları ve Dezavantajları
+
+#### Avantajları:
+- İş mantığı ile UI tamamen ayrılmıştır.
+- Test edilebilirlik çok yüksektir.
+- Büyük ve karmaşık uygulamalar için idealdir.
+
+#### Dezavantajları:
+- Öğrenme eğrisi yüksektir.
+- Küçük uygulamalar için fazla karmaşık olabilir.
+- Boilerplate kod çoktur.
+
+## 6. Hangisi Ne Zaman Kullanılır?
+
+- **Provider**: Küçük ve orta ölçekli uygulamalar, hızlı prototipleme, öğrenmesi kolay bir çözüm istendiğinde.
+- **Riverpod**: Orta ve büyük ölçekli uygulamalar, derleme zamanı güvenliği, test edilebilirlik ve modern bir çözüm istendiğinde.
+- **Bloc/Cubit**: Büyük ve karmaşık uygulamalar, iş mantığının UI'dan tamamen ayrılması, test güdümlü geliştirme istendiğinde.
+
+## 7. Özet Karşılaştırma Tablosu
+
+| Özellik | Provider | Riverpod | Bloc/Cubit |
+|---------|----------|----------|------------|
+| Temel Model | InheritedWidget | Dart değişkenleri | Event-State veya direkt metod |
+| Widget Ağacına Bağımlılık | Evet | Hayır | Evet (BlocProvider ile) |
+| Derleme Zamanı Güvenliği | Hayır | Evet | Evet |
+| Boilerplate | Az | Orta | Çok (Bloc), Az (Cubit) |
+| Öğrenme Eğrisi | Kolay | Orta | Zor (Bloc), Orta (Cubit) |
+| Test Edilebilirlik | Orta | Yüksek | Çok Yüksek |
+| Büyük Uygulamalar | Sınırlı | Uygun | Çok Uygun |
+
+## 8. Öğrenme Yol Haritası
+
+1. Temel Flutter Kavramları: Widget'lar, setState, Stateless ve Stateful widget'lar.
+2. Provider: Basit state yönetimi için.
+3. Riverpod: Daha gelişmiş ve güvenli state yönetimi için.
+4. Bloc/Cubit: Karmaşık iş mantığı ve test için.
+
+## 9. Sonuç
+
+State management, Flutter'da uygulamanın ölçeğine ve karmaşıklığına göre seçilmelidir. Küçük uygulamalar için Provider yeterli olabilirken, büyük uygulamalar için Riverpod veya Bloc tercih edilebilir. Her bir çözümün kendi avantaj ve dezavantajları vardır. Önemli olan proje ihtiyaçlarına en uygun olanı seçmektir.
+
+
 Flutter'da State Management rehberini daha kapsamlı ve detaylı hale getirerek genişletelim. Her kavramı, state türlerini ve örnekleri detaylı açıklamalarla ele alalım.
 
 ## 1. State Management Nedir? (Detaylı Açıklama)
